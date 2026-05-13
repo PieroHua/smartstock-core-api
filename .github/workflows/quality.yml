@@ -1,0 +1,53 @@
+name: Code Quality
+description: Analiza cada cambio en código (linting, tests, seguridad)
+
+on:
+  pull_request:
+    branches:
+      - develop
+    paths:
+      - 'src/**'
+      - 'test/**'
+      - 'package.json'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  quality-analysis:
+    name: Analyze Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: ESLint
+        run: npm run lint --max-warnings=0
+        continue-on-error: false
+
+      - name: Prettier check
+        run: npx prettier --check "src/**/*.ts"
+
+      - name: Tests
+        run: npm run test:cov -- --ci
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONARCLOUD_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }}
+        if: secrets.SONARCLOUD_TOKEN != ''
