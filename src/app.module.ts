@@ -24,6 +24,7 @@ import { HealthModule } from './modules/health/health.module';
         migrationsRun: false,
         synchronize: process.env.NODE_ENV === 'development',
         logging: process.env.NODE_ENV === 'development',
+        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
       }),
     }),
     HealthModule,
